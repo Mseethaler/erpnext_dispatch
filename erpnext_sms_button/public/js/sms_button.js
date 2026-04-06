@@ -1,10 +1,19 @@
+function get_phone(frm) {
+    const dt = frm.doc.doctype;
+    if (dt === 'Lead' || dt === 'Contact') {
+        return frm.doc.mobile_no || frm.doc.phone || '';
+    } else if (dt === 'Customer') {
+        return frm.doc.mobile_no || '';
+    } else if (dt === 'Sales Order') {
+        return frm.doc.contact_mobile || frm.doc.contact_phone || '';
+    } else if (dt === 'Sales Invoice') {
+        return frm.doc.contact_mobile || frm.doc.customer_phone_number || '';
+    }
+    return '';
+}
+
 function show_sms_dialog(frm) {
-    // Field priority order per doctype — extend as needed
-    const phone = frm.doc.mobile_no
-        || frm.doc.customer_phone_number
-        || frm.doc.phone
-        || frm.doc.contact_mobile
-        || '';
+    const phone = get_phone(frm);
 
     const default_msg = frm.doc.doctype === 'Sales Invoice'
         ? `Invoice ${frm.doc.name} — Due: $${frm.doc.grand_total} by ${frm.doc.due_date}`
@@ -39,7 +48,6 @@ function show_sms_dialog(frm) {
                 callback(r) {
                     if (!r.exc) {
                         frappe.show_alert({ message: __('SMS Sent'), indicator: 'green' });
-                        // Log to Communication timeline
                         frappe.call({
                             method: 'frappe.client.insert',
                             args: {
@@ -64,7 +72,6 @@ function show_sms_dialog(frm) {
     d.show();
 }
 
-// Attach to each doctype
 ['Sales Invoice', 'Sales Order', 'Lead', 'Contact', 'Customer'].forEach(dt => {
     frappe.ui.form.on(dt, {
         refresh(frm) {
