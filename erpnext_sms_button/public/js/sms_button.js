@@ -72,10 +72,88 @@ function show_sms_dialog(frm) {
     d.show();
 }
 
+function show_call_dialog(frm) {
+    const phone = get_phone(frm);
+
+    if (!phone) {
+        frappe.msgprint(__('No phone number found on this record.'));
+        return;
+    }
+
+    // Open the tel: link immediately
+    window.location.href = `tel:${phone}`;
+
+    // Show the post-call logging dialog
+    let d = new frappe.ui.Dialog({
+        title: __('Log Call'),
+        fields: [
+            {
+                fieldname: 'phone_no',
+                fieldtype: 'Data',
+                label: __('Phone Number'),
+                default: phone,
+                reqd: 1
+            },
+            {
+                fieldname: 'outcome',
+                fieldtype: 'Select',
+                label: __('Outcome'),
+                options: [
+                    'Reached',
+                    'No Answer',
+                    'Left Voicemail',
+                    'Wrong Number',
+                    'Call Back Later'
+                ].join('\n'),
+                default: 'Reached',
+                reqd: 1
+            },
+            {
+                fieldname: 'summary',
+                fieldtype: 'Small Text',
+                label: __('Summary / Notes'),
+            }
+        ],
+        primary_action_label: __('Log Call'),
+        secondary_action_label: __('Skip'),
+        primary_action(values) {
+            const content = `Call ${values.outcome}${values.summary ? ' — ' + values.summary : ''}`;
+            frappe.call({
+                method: 'frappe.client.insert',
+                args: {
+                    doc: {
+                        doctype: 'Communication',
+                        communication_type: 'Communication',
+                        communication_medium: 'Phone',
+                        reference_doctype: frm.doc.doctype,
+                        reference_name: frm.doc.name,
+                        content: content,
+                        sent_or_received: 'Sent',
+                        phone_no: values.phone_no,
+                        subject: `Call — ${values.outcome}`
+                    }
+                },
+                callback(r) {
+                    if (!r.exc) {
+                        frappe.show_alert({ message: __('Call Logged'), indicator: 'green' });
+                        frm.reload_doc();
+                    }
+                }
+            });
+            d.hide();
+        },
+        secondary_action() {
+            d.hide();
+        }
+    });
+    d.show();
+}
+
 ['Sales Invoice', 'Sales Order', 'Lead', 'Contact', 'Customer'].forEach(dt => {
     frappe.ui.form.on(dt, {
         refresh(frm) {
             frm.page.add_menu_item(__('Send SMS'), () => show_sms_dialog(frm));
+            frm.page.add_menu_item(__('Call'), () => show_call_dialog(frm));
         }
     });
 });
