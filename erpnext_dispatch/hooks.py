@@ -10,33 +10,25 @@ after_install = "erpnext_dispatch.setup.install.after_install"
 
 # Fixtures to export/import with the app
 fixtures = [
-    # Scheduled date/time fields on Opportunity
     {
         "dt": "Custom Field",
         "filters": [
             ["dt", "in", ["Opportunity", "Sales Order", "Sales Invoice", "Quotation"]],
-            ["fieldname", "like", "custom_scheduled%"],
+            ["fieldname", "in", [
+                "custom_scheduled_start",
+                "custom_scheduled_end",
+                "custom_customer_signature"
+            ]],
         ]
     },
-    # Signature fields
-    {
-        "dt": "Custom Field",
-        "filters": [
-            ["dt", "in", ["Quotation", "Sales Order", "Sales Invoice"]],
-            ["fieldname", "like", "custom_%signature%"],
-        ]
-    },
-    # Workspaces
     {
         "dt": "Workspace",
         "filters": [["name", "in", ["Dispatched Tecs", "Dispatch Officer", "Quick Routes"]]]
     },
-    # Calendar View
     {
         "dt": "Calendar View",
         "filters": [["name", "=", "Opportunities"]]
     },
-    # Notification configs
     {
         "dt": "Notification",
         "filters": [["name", "like", "Dispatch%"]]
