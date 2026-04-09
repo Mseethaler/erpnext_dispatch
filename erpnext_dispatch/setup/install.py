@@ -1,3 +1,5 @@
+import frappe
+
 def after_install():
     create_setup_tasks()
 
