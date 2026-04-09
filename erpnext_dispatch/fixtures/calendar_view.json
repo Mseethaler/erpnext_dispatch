@@ -1,0 +1,13 @@
+[
+ {
+  "all_day": 0,
+  "docstatus": 0,
+  "doctype": "Calendar View",
+  "end_date_field": "custom_scheduled_end",
+  "modified": "2026-04-08 17:05:43.881154",
+  "name": "Opportunities",
+  "reference_doctype": "Opportunity",
+  "start_date_field": "custom_scheduled_start",
+  "subject_field": "customer_name"
+ }
+]
