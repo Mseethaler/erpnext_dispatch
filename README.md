@@ -1,4 +1,4 @@
-# ERPNext SMS Button
+# ERPNext Dispact
 
 Adds a **Send SMS** menu item to CRM and selling doctypes in ERPNext, using the native Frappe SMS gateway configuration.
 
