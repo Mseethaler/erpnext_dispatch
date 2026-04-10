@@ -8,6 +8,8 @@ function get_phone(frm) {
         return frm.doc.contact_mobile || frm.doc.contact_phone || '';
     } else if (dt === 'Sales Invoice') {
         return frm.doc.contact_mobile || frm.doc.customer_phone_number || '';
+    } else if (dt === 'Opportunity') {
+        return frm.doc.contact_mobile || frm.doc.phone || '';
     }
     return '';
 }
@@ -80,10 +82,8 @@ function show_call_dialog(frm) {
         return;
     }
 
-    // Open the tel: link immediately
     window.location.href = `tel:${phone}`;
 
-    // Show the post-call logging dialog
     let d = new frappe.ui.Dialog({
         title: __('Log Call'),
         fields: [
@@ -149,6 +149,7 @@ function show_call_dialog(frm) {
     d.show();
 }
 
+// SMS and Call buttons for standard doctypes
 ['Sales Invoice', 'Sales Order', 'Lead', 'Contact', 'Customer'].forEach(dt => {
     frappe.ui.form.on(dt, {
         refresh(frm) {
@@ -156,4 +157,52 @@ function show_call_dialog(frm) {
             frm.page.add_menu_item(__('Call'), () => show_call_dialog(frm));
         }
     });
+});
+
+// Opportunity — En Route button + SMS and Call
+frappe.ui.form.on('Opportunity', {
+    refresh(frm) {
+        frm.page.add_menu_item(__('Send SMS'), () => show_sms_dialog(frm));
+        frm.page.add_menu_item(__('Call'), () => show_call_dialog(frm));
+
+        if (!frm.doc.custom_dispatched) {
+            frm.add_custom_button(__('En Route'), function() {
+                frappe.confirm(
+                    __('Mark as dispatched and open Maps?'),
+                    function() {
+                        frappe.call({
+                            method: 'frappe.client.set_value',
+                            args: {
+                                doctype: 'Opportunity',
+                                name: frm.doc.name,
+                                fieldname: 'custom_dispatched',
+                                value: 1
+                            },
+                            callback: function() {
+                                frappe.show_alert({ message: __('Marked as Dispatched'), indicator: 'green' });
+                                frm.reload_doc();
+                                const addr = frm.doc.customer_address
+                                    || frm.doc.address_display
+                                    || '';
+                                if (addr) {
+                                    window.open(`https://maps.google.com/?q=${encodeURIComponent(addr)}`);
+                                }
+                            }
+                        });
+                    }
+                );
+            }, __('Dispatch'));
+        } else {
+            frm.add_custom_button(__('Open Maps'), function() {
+                const addr = frm.doc.customer_address
+                    || frm.doc.address_display
+                    || '';
+                if (addr) {
+                    window.open(`https://maps.google.com/?q=${encodeURIComponent(addr)}`);
+                } else {
+                    frappe.msgprint(__('No address found on this record.'));
+                }
+            }, __('Dispatch'));
+        }
+    }
 });
