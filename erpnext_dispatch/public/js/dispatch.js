@@ -149,6 +149,30 @@ function show_call_dialog(frm) {
     d.show();
 }
 
+function open_maps_for_opportunity(frm) {
+    const addr_name = frm.doc.customer_address;
+    if (!addr_name) {
+        frappe.msgprint(__('No address linked to this Opportunity.'));
+        return;
+    }
+    frappe.db.get_value(
+        'Address',
+        addr_name,
+        ['address_line1', 'address_line2', 'city', 'state', 'pincode'],
+        function(data) {
+            const parts = [
+                data.address_line1,
+                data.address_line2,
+                data.city,
+                data.state,
+                data.pincode
+            ].filter(Boolean);
+            const addr = parts.join(', ');
+            window.open(`https://maps.google.com/?q=${encodeURIComponent(addr)}`);
+        }
+    );
+}
+
 // SMS and Call buttons for standard doctypes
 ['Sales Invoice', 'Sales Order', 'Lead', 'Contact', 'Customer'].forEach(dt => {
     frappe.ui.form.on(dt, {
@@ -181,12 +205,7 @@ frappe.ui.form.on('Opportunity', {
                             callback: function() {
                                 frappe.show_alert({ message: __('Marked as Dispatched'), indicator: 'green' });
                                 frm.reload_doc();
-                                const addr = frm.doc.customer_address
-                                    || frm.doc.address_display
-                                    || '';
-                                if (addr) {
-                                    window.open(`https://maps.google.com/?q=${encodeURIComponent(addr)}`);
-                                }
+                                open_maps_for_opportunity(frm);
                             }
                         });
                     }
@@ -194,14 +213,7 @@ frappe.ui.form.on('Opportunity', {
             }, __('Dispatch'));
         } else {
             frm.add_custom_button(__('Open Maps'), function() {
-                const addr = frm.doc.customer_address
-                    || frm.doc.address_display
-                    || '';
-                if (addr) {
-                    window.open(`https://maps.google.com/?q=${encodeURIComponent(addr)}`);
-                } else {
-                    frappe.msgprint(__('No address found on this record.'));
-                }
+                open_maps_for_opportunity(frm);
             }, __('Dispatch'));
         }
     }
